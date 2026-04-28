@@ -1,0 +1,25 @@
+apiVersion: v2
+name: ghostfolio
+description: Helm chart for ghostfolio
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: 7k-hiroba
+keywords:
+  - kubernetes
+  - hiroba
+home: https://github.com/7K-Hiroba/ghostfolio
+sources:
+  - https://github.com/7K-Hiroba/ghostfolio
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: documentation
+      url: https://hiroba.7kgroup.org/docs/apps/ghostfolio/helm-base
+    - name: source
+      url: https://github.com/7K-Hiroba/ghostfolio
+    - name: support
+      url: https://github.com/7K-Hiroba/ghostfolio/issues
+  artifacthub.io/maintainers: |
+    - name: 7k-hiroba

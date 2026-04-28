@@ -1,0 +1,14 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ghostfolio
+  description: Ghostfolio
+  annotations:
+    github.com/project-slug: 7K-Hiroba/ghostfolio
+    backstage.io/docs-url: https://hiroba.7kgroup.org/ghostfolio
+  tags:
+    - kubernetes
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:default/7khiroba
