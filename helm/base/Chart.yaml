@@ -18,7 +18,6 @@ home: https://ghostfol.io
 sources:
   - https://github.com/7K-Hiroba/ghostfolio
   - https://github.com/ghostfolio/ghostfolio
-icon: https://ghostfol.io/assets/images/logo.png
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |
