@@ -4,7 +4,7 @@ description: >-
   Ghostfolio — Open Source Wealth Management Software. Tracks stocks, ETFs, and
   cryptocurrencies to support data-driven investment decisions.
 type: application
-version: 1.0.0
+version: 1.0.1
 appVersion: "2.130.0"
 maintainers:
   - name: 7k-hiroba
