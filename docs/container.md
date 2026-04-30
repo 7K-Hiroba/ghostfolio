@@ -27,8 +27,8 @@ Labels are populated from the template at scaffold time:
 | Label                                           | Value                                                    |
 | ----------------------------------------------- | -------------------------------------------------------- |
 | `maintainer`                                    | `7KGroup <https://github.com/7KGroup>`                   |
-| `org.opencontainers.image.source`               | `https://github.com/7KGroup/ghostfolio`          |
-| `org.opencontainers.image.description`          | `Ghostfolio`                              |
+| `org.opencontainers.image.source`               | `https://github.com/7KGroup/ghostfolio`                  |
+| `org.opencontainers.image.description`          | `Ghostfolio`                                             |
 
 <!-- TODO: Add more OCI labels (version, revision, created) once your CI wiring is in place. -->
 

@@ -61,6 +61,61 @@
       },
       "additionalProperties": false
     },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "provider": { "type": "string", "enum": ["dragonfly"] },
+        "replicas": { "type": "integer", "minimum": 1 },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "dragonfly": {
+          "type": "object",
+          "properties": {
+            "image": { "type": "string" },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "authentication": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "passwordSecretRef": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "key": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "s3": {
       "type": "object",
       "properties": {

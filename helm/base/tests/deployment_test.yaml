@@ -10,14 +10,20 @@ tests:
           path: spec.replicas
           value: 1
 
-  - it: uses the correct image
+  - it: uses the official Ghostfolio image
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "^docker.io/ghostfolio/ghostfolio:"
+
+  - it: uses the correct image when overridden
     set:
-      image.repository: ghcr.io/example/app
-      image.tag: "1.2.3"
+      image.repository: ghcr.io/example/ghostfolio
+      image.tag: "3.0.0"
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "ghcr.io/example/app:1.2.3"
+          value: "ghcr.io/example/ghostfolio:3.0.0"
 
   - it: falls back to appVersion when tag is empty
     set:
@@ -25,7 +31,7 @@ tests:
     asserts:
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: ":0\\.1\\.0$"
+          pattern: ":2\\.130\\.0$"
 
   - it: omits replicas when autoscaling is enabled
     set:
@@ -57,50 +63,55 @@ tests:
 
   - it: sets resource limits and requests
     asserts:
-      - isNotNull:
-          path: spec.template.spec.containers[0].resources.limits
-      - isNotNull:
-          path: spec.template.spec.containers[0].resources.requests
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
 
-  - it: sets container port from service.targetPort
-    set:
-      service.targetPort: 3000
+  - it: sets container port to 3333 (Ghostfolio default)
     asserts:
       - equal:
           path: spec.template.spec.containers[0].ports[0].containerPort
-          value: 3000
+          value: 3333
+
+  - it: uses /api/v1/health for liveness probe
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /api/v1/health
+
+  - it: uses /api/v1/health for readiness probe
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /api/v1/health
 
   - it: renders env vars when set
     set:
       env:
-        - name: FOO
-          value: bar
+        - name: DATABASE_URL
+          value: "postgresql://ghostfolio:secret@localhost:5432/ghostfolio"
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: FOO
-            value: bar
+            name: DATABASE_URL
+            value: "postgresql://ghostfolio:secret@localhost:5432/ghostfolio"
 
-  - it: renders extra volumes and mounts
-    set:
-      extraVolumes:
-        - name: tmp
-          emptyDir: {}
-      extraVolumeMounts:
-        - name: tmp
-          mountPath: /tmp
+  - it: mounts /tmp by default for Prisma and Node.js temp files
     asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: tmp
-            emptyDir: {}
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
             name: tmp
             mountPath: /tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir: {}
 
   - it: renders pod annotations
     set:
@@ -108,5 +119,5 @@ tests:
         prometheus.io/scrape: "true"
     asserts:
       - equal:
-          path: spec.template.metadata.annotations.prometheus\.io/scrape
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
           value: "true"

@@ -1,0 +1,31 @@
+{{- if and .Values.redis.enabled (eq .Values.redis.provider "dragonfly") }}
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: {{ include "platform.name" . }}-redis
+  labels:
+    {{- include "platform.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.redis.replicas }}
+
+  resources:
+    {{- toYaml .Values.redis.resources | nindent 4 }}
+
+  {{- if .Values.redis.dragonfly.image }}
+  image: {{ .Values.redis.dragonfly.image }}
+  {{- end }}
+
+  {{- with .Values.redis.dragonfly.args }}
+  args:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
+  {{- if .Values.redis.dragonfly.authentication.enabled }}
+  authentication:
+    {{- if .Values.redis.dragonfly.authentication.passwordSecretRef.name }}
+    passwordFromSecret:
+      name: {{ .Values.redis.dragonfly.authentication.passwordSecretRef.name }}
+      key: {{ .Values.redis.dragonfly.authentication.passwordSecretRef.key }}
+    {{- end }}
+  {{- end }}
+{{- end }}

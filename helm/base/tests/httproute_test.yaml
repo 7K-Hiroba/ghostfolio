@@ -23,18 +23,24 @@ tests:
           path: spec.parentRefs[0].namespace
           value: gateway-system
 
-  - it: sets hostnames
-    set:
-      gateway.hostnames:
-        - app.example.com
-        - www.example.com
+  - it: uses ghostfolio.example.com hostname by default
     asserts:
       - equal:
           path: spec.hostnames[0]
-          value: "app.example.com"
+          value: "ghostfolio.example.com"
+
+  - it: sets custom hostnames
+    set:
+      gateway.hostnames:
+        - finance.example.com
+        - ghostfolio.internal.example.com
+    asserts:
+      - equal:
+          path: spec.hostnames[0]
+          value: "finance.example.com"
       - equal:
           path: spec.hostnames[1]
-          value: "www.example.com"
+          value: "ghostfolio.internal.example.com"
 
   - it: renders catch-all rule when no custom rules
     set:

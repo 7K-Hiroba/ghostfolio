@@ -1,0 +1,112 @@
+suite: Redis (Dragonfly)
+templates:
+  - templates/database/redis-dragonfly.yaml
+capabilities:
+  apiVersions:
+    - dragonflydb.io/v1alpha1
+tests:
+  - it: is not created when redis is disabled
+    set:
+      redis.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders when redis is enabled with dragonfly provider
+    set:
+      redis.enabled: true
+      redis.provider: dragonfly
+    asserts:
+      - isKind:
+          of: Dragonfly
+      - equal:
+          path: apiVersion
+          value: dragonflydb.io/v1alpha1
+
+  - it: uses configured replicas and resources
+    set:
+      redis:
+        enabled: true
+        provider: dragonfly
+        replicas: 3
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+      - equal:
+          path: spec.resources.limits.memory
+          value: 512Mi
+      - equal:
+          path: spec.resources.requests.cpu
+          value: 250m
+
+  - it: omits image when not set
+    set:
+      redis:
+        enabled: true
+        provider: dragonfly
+        dragonfly:
+          image: ""
+    asserts:
+      - isNull:
+          path: spec.image
+
+  - it: sets custom image when provided
+    set:
+      redis:
+        enabled: true
+        provider: dragonfly
+        dragonfly:
+          image: docker.dragonflydb.io/dragonflydb/dragonfly:v1.21.1
+    asserts:
+      - equal:
+          path: spec.image
+          value: docker.dragonflydb.io/dragonflydb/dragonfly:v1.21.1
+
+  - it: includes authentication when enabled with secret ref
+    set:
+      redis:
+        enabled: true
+        provider: dragonfly
+        dragonfly:
+          authentication:
+            enabled: true
+            passwordSecretRef:
+              name: ghostfolio-redis-password
+              key: password
+    asserts:
+      - equal:
+          path: spec.authentication.passwordFromSecret.name
+          value: ghostfolio-redis-password
+      - equal:
+          path: spec.authentication.passwordFromSecret.key
+          value: password
+
+  - it: includes correct platform labels
+    set:
+      redis.enabled: true
+      redis.provider: dragonfly
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/part-of"]
+          value: hiroba
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: platform
+
+  - it: names resource with app name prefix
+    set:
+      redis.enabled: true
+      redis.provider: dragonfly
+      global.appName: ghostfolio
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ghostfolio-redis

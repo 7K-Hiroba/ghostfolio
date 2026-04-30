@@ -6,7 +6,7 @@ Add ArgoCD Applications, FluxCD Kustomizations, or other orchestration manifests
 
 ## Structure
 
-```
+```text
 gitops/
 ├── argocd/
 │   └── application.yaml       # ArgoCD Application manifest

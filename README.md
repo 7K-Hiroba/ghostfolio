@@ -4,7 +4,7 @@ Ghostfolio
 
 ## Structure
 
-```
+```text
 ├── helm/
 │   ├── base/           # Core k8s resources (Deployment, Service, Ingress)
 │   └── platform/       # Platform dependencies with provider switching

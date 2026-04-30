@@ -35,12 +35,12 @@ helm install ghostfolio-platform ./helm/platform \
 
 Provisions a PostgreSQL cluster via [CloudNativePG](https://cloudnative-pg.io/).
 
-### Prerequisites
+### PostgreSQL prerequisites
 
 - CloudNativePG operator installed in the cluster
 - A `StorageClass` available for the data volume
 
-### Configuration
+### PostgreSQL configuration
 
 ```yaml
 postgres:
@@ -67,7 +67,7 @@ Provisions an S3-compatible bucket. Two providers are supported:
 - **`crossplane`** — provisions a real bucket on AWS (or an S3-compatible cloud) via Crossplane's S3 provider
 - **`garage`** — creates a bucket in an in-cluster [Garage](https://garagehq.deuxfleurs.fr/) deployment
 
-### Configuration
+### S3 configuration
 
 ```yaml
 s3:
@@ -89,12 +89,12 @@ Swap the provider by changing `s3.provider` — the provider-specific blocks (`c
 
 Populates a Kubernetes `Secret` from an upstream store (Vault, AWS Secrets Manager, 1Password, etc.) via an `ExternalSecret` resource. The base chart's `envFrom` then pulls credentials from this `Secret`.
 
-### Prerequisites
+### ExternalSecrets prerequisites
 
 - [external-secrets operator](https://external-secrets.io/) installed in the cluster
 - A `ClusterSecretStore` (or `SecretStore`) configured and reachable
 
-### Configuration
+### ExternalSecrets configuration
 
 ```yaml
 externalSecrets:
@@ -134,7 +134,7 @@ externalSecrets:
         DATABASE_URL: "postgres://{{ `{{ .username }}` }}:{{ `{{ .password }}` }}@host/{{ `{{ .database }}` }}"
 ```
 
-The double-brace escape (`{{ ` ... ` }}`) is needed because Helm processes the values file first; the inner braces reach ESO untouched.
+The double-brace escape (`` {{ `` ... `` }} ``) is needed because Helm processes the values file first; the inner braces reach ESO untouched.
 
 ### Wiring back into the base chart
 
