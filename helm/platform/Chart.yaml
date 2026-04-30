@@ -1,10 +1,10 @@
 apiVersion: v2
 name: ghostfolio-platform
 description: >-
-  Platform dependencies for Ghostfolio — provisions PostgreSQL (CNPG),
-  Redis (Dragonfly), secrets, storage, and observability resources.
+  Platform dependencies for Ghostfolio — provisions PostgreSQL (CNPG), Redis
+  (Dragonfly), secrets, storage, and observability resources.
 type: application
-version: 0.1.0
+version: 1.0.0
 appVersion: "0.1.0"
 maintainers:
   - name: 7k-hiroba
