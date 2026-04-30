@@ -41,7 +41,18 @@ tests:
           path: spec.storage.storageClass
           value: fast-ssd
 
-  - it: sets database bootstrap config
+  - it: uses ghostfolio database defaults
+    set:
+      postgres.enabled: true
+    asserts:
+      - equal:
+          path: spec.bootstrap.initdb.database
+          value: ghostfolio
+      - equal:
+          path: spec.bootstrap.initdb.owner
+          value: ghostfolio
+
+  - it: allows overriding database and owner
     set:
       postgres:
         enabled: true

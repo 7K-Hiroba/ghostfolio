@@ -1,17 +1,24 @@
 apiVersion: v2
 name: ghostfolio
-description: Helm chart for ghostfolio
+description: >-
+  Ghostfolio — Open Source Wealth Management Software.
+  Tracks stocks, ETFs, and cryptocurrencies to support data-driven investment decisions.
 type: application
 version: 0.1.0
-appVersion: "0.1.0"
+appVersion: "2.130.0"
 maintainers:
   - name: 7k-hiroba
 keywords:
   - kubernetes
   - hiroba
-home: https://github.com/7K-Hiroba/ghostfolio
+  - finance
+  - wealth-management
+  - portfolio-tracker
+home: https://ghostfol.io
 sources:
   - https://github.com/7K-Hiroba/ghostfolio
+  - https://github.com/ghostfolio/ghostfolio
+icon: https://ghostfol.io/assets/images/logo.png
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |
@@ -19,6 +26,8 @@ annotations:
       url: https://hiroba.7kgroup.org/docs/apps/ghostfolio/helm-base
     - name: source
       url: https://github.com/7K-Hiroba/ghostfolio
+    - name: upstream
+      url: https://github.com/ghostfolio/ghostfolio
     - name: support
       url: https://github.com/7K-Hiroba/ghostfolio/issues
   artifacthub.io/maintainers: |

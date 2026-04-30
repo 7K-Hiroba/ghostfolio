@@ -1,15 +1,15 @@
-# Platform chart examples for ghostfolio
-# These are example resource definitions managed by cluster operators (CNPG, Crossplane, etc.).
-# Add, remove, or customise them to match your application's needs.
+# Platform chart for Ghostfolio
+# Provisions databases, secrets, and observability resources that the base
+# chart's Deployment consumes but does not manage.
 #
 # Each resource supports a `provider` switch to select the backend implementation.
 # Available providers are listed per resource — add your own by creating a
 # matching template file in templates/<category>/<resource>-<provider>.yaml
 #
 # Templates are organized into subdirectories:
-#   database/    — Database resources (CNPG, etc.)
-#   storage/     — Object storage (Crossplane, Garage, etc.)
-#   secrets/     — External secrets management
+#   database/      — Database resources (CNPG, Dragonfly, etc.)
+#   storage/       — Object storage (Crossplane, Garage, etc.)
+#   secrets/       — External secrets management
 #   observability/ — ServiceMonitors, Grafana dashboards, PrometheusRules
 
 global:
@@ -20,7 +20,7 @@ global:
   # releases of the same app coexist safely. Leave empty to match by name only.
   baseInstance: ""
 
-# -- PostgreSQL database
+# -- PostgreSQL database (required by Ghostfolio)
 postgres:
   enabled: true
   # -- Provider: "cnpg" (CloudNativePG operator)
@@ -39,14 +39,43 @@ postgres:
   # -- PostgreSQL version
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
   # -- Database name to create
-  database: app
+  database: ghostfolio
   # -- Database owner
-  owner: app
+  owner: ghostfolio
   # -- Backup configuration (optional)
   backup:
     enabled: false
     schedule: "0 2 * * *"
     retentionPolicy: "7d"
+
+# -- Redis-compatible cache (required by Ghostfolio)
+redis:
+  enabled: true
+  # -- Provider: "dragonfly" (Dragonfly operator — Redis-compatible)
+  provider: dragonfly
+  # -- Number of Dragonfly replicas
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  # -- Dragonfly-specific settings
+  dragonfly:
+    # -- Dragonfly image (leave empty for operator default)
+    image: ""
+    # -- Extra arguments to pass to the Dragonfly process
+    args: []
+    # -- Whether to enable password authentication
+    authentication:
+      enabled: false
+      # -- Reference to an existing Secret with a password key.
+      # If empty, the operator generates one.
+      passwordSecretRef:
+        name: ""
+        key: password
 
 # -- S3-compatible object storage
 s3:
@@ -82,6 +111,8 @@ s3:
     replicationFactor: 3
 
 # -- External Secrets (external-secrets.io)
+# Use this to pull Ghostfolio's required secrets (DATABASE_URL, JWT_SECRET_KEY,
+# ACCESS_TOKEN_SALT, REDIS_PASSWORD) from your secret backend.
 externalSecrets:
   enabled: false
   # -- How often to sync secrets
@@ -93,22 +124,31 @@ externalSecrets:
   # -- Individual secret mappings
   data: []
   #  - secretKey: DATABASE_URL
-  #    remoteKey: myapp/database
+  #    remoteKey: ghostfolio/database
   #    property: url
-  #  - secretKey: API_KEY
-  #    remoteKey: myapp/api
-  #    property: key
+  #  - secretKey: REDIS_HOST
+  #    remoteKey: ghostfolio/redis
+  #    property: host
+  #  - secretKey: REDIS_PASSWORD
+  #    remoteKey: ghostfolio/redis
+  #    property: password
+  #  - secretKey: ACCESS_TOKEN_SALT
+  #    remoteKey: ghostfolio/auth
+  #    property: access-token-salt
+  #  - secretKey: JWT_SECRET_KEY
+  #    remoteKey: ghostfolio/auth
+  #    property: jwt-secret-key
   # -- Pull all keys from a remote path
   dataFrom: []
   #  - extract:
-  #      key: myapp/config
+  #      key: ghostfolio/config
   # -- Optional target Secret template for value transformation.
   # See https://external-secrets.io/latest/guides/templating/
   target:
     template: {}
     # type: Opaque
     # data:
-    #   DATABASE_URL: "postgres://{{ `{{ .username }}` }}:{{ `{{ .password }}` }}@host/{{ `{{ .database }}` }}"
+    #   DATABASE_URL: "postgresql://{{ `{{ .username }}` }}:{{ `{{ .password }}` }}@ghostfolio-pg-rw:5432/{{ `{{ .database }}` }}"
 
 # -- Observability resources
 observability:

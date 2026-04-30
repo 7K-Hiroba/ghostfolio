@@ -14,6 +14,10 @@ the available APIs.
   {{- fail "postgres.enabled is true but the CloudNativePG Operator CRD (postgresql.cnpg.io/v1) is not installed. Install the operator first or set postgres.enabled=false." }}
 {{- end }}
 
+{{- if and .Values.redis.enabled (eq .Values.redis.provider "dragonfly") (not (.Capabilities.APIVersions.Has "dragonflydb.io/v1alpha1")) }}
+  {{- fail "redis.enabled is true with provider 'dragonfly' but the Dragonfly Operator CRD (dragonflydb.io/v1alpha1) is not installed. Install the Dragonfly Operator first or set redis.enabled=false." }}
+{{- end }}
+
 {{- if and .Values.s3.enabled (eq .Values.s3.provider "crossplane") (not (.Capabilities.APIVersions.Has "s3.aws.crossplane.io/v1beta1")) }}
   {{- fail "s3.enabled is true with provider 'crossplane' but the Crossplane S3 CRD (s3.aws.crossplane.io/v1beta1) is not installed. Install Crossplane with the AWS S3 provider first, or switch to s3.provider=garage, or set s3.enabled=false." }}
 {{- end }}

@@ -5,14 +5,28 @@ tests:
   - it: fails when postgres is enabled without CNPG CRD
     set:
       postgres.enabled: true
+      redis.enabled: false
     capabilities:
       apiVersions: []
     asserts:
       - failedTemplate:
           errorMessage: "postgres.enabled is true but the CloudNativePG Operator CRD (postgresql.cnpg.io/v1) is not installed. Install the operator first or set postgres.enabled=false."
 
+  - it: fails when redis dragonfly is enabled without Dragonfly CRD
+    set:
+      postgres.enabled: false
+      redis.enabled: true
+      redis.provider: dragonfly
+    capabilities:
+      apiVersions: []
+    asserts:
+      - failedTemplate:
+          errorMessage: "redis.enabled is true with provider 'dragonfly' but the Dragonfly Operator CRD (dragonflydb.io/v1alpha1) is not installed. Install the Dragonfly Operator first or set redis.enabled=false."
+
   - it: fails when s3 with crossplane provider is enabled without Crossplane S3 CRD
     set:
+      postgres.enabled: false
+      redis.enabled: false
       s3.enabled: true
       s3.provider: crossplane
     capabilities:
@@ -23,6 +37,8 @@ tests:
 
   - it: passes for s3 garage provider without Crossplane CRD
     set:
+      postgres.enabled: false
+      redis.enabled: false
       s3.enabled: true
       s3.provider: garage
     capabilities:
@@ -33,6 +49,8 @@ tests:
 
   - it: fails when externalSecrets is enabled without ESO CRD
     set:
+      postgres.enabled: false
+      redis.enabled: false
       externalSecrets.enabled: true
     capabilities:
       apiVersions: []
@@ -42,6 +60,8 @@ tests:
 
   - it: fails when ServiceMonitor is enabled without Prometheus Operator CRD
     set:
+      postgres.enabled: false
+      redis.enabled: false
       observability.serviceMonitor.enabled: true
     capabilities:
       apiVersions: []
@@ -51,6 +71,8 @@ tests:
 
   - it: fails when PrometheusRule is enabled without Prometheus Operator CRD
     set:
+      postgres.enabled: false
+      redis.enabled: false
       observability.prometheusRules.enabled: true
     capabilities:
       apiVersions: []
@@ -61,6 +83,7 @@ tests:
   - it: passes when all features disabled
     set:
       postgres.enabled: false
+      redis.enabled: false
       s3.enabled: false
       externalSecrets.enabled: false
       observability.serviceMonitor.enabled: false
