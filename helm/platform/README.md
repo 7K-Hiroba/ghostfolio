@@ -26,7 +26,7 @@ helm install ghostfolio-platform \
 ## What gets installed
 
 | Resource | Purpose | Default |
-|---|---|---|
+| --- | --- | --- |
 | `Cluster` (CNPG) | PostgreSQL database (`ghostfolio` db) | **enabled** |
 | `Dragonfly` | Redis-compatible cache via Dragonfly Operator | **enabled** |
 | `ExternalSecret` | Sources app secrets from your secret backend | disabled |

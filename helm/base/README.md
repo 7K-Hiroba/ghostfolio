@@ -25,7 +25,7 @@ helm install ghostfolio \
 ## What gets installed
 
 | Resource | Purpose |
-|---|---|
+| --- | --- |
 | `Deployment` | Ghostfolio application pod |
 | `Service` | ClusterIP fronting the deployment (port 80 -> 3333) |
 | `HTTPRoute` | Gateway API routing |
@@ -38,7 +38,7 @@ helm install ghostfolio \
 Ghostfolio needs the following environment variables at a minimum. Configure them via the `env` value, typically referencing a Secret created by the platform chart's `ExternalSecret`:
 
 | Variable | Description |
-|---|---|
+| --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string (`postgresql://user:pass@host:5432/ghostfolio`) |
 | `REDIS_HOST` | Redis hostname |
 | `REDIS_PORT` | Redis port (default `6379`) |

@@ -6,7 +6,7 @@ Use this when your application exposes infrastructure capabilities that other ap
 
 ## Structure
 
-```
+```text
 crossplane/
 ├── xrd-<resource>.yaml           # CompositeResourceDefinition
 ├── composition-<resource>.yaml   # Composition (maps XRD to managed resources)
