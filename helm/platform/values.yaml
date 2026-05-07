@@ -47,6 +47,16 @@ postgres:
     enabled: false
     schedule: "0 2 * * *"
     retentionPolicy: "7d"
+    garage:
+      # -- Garage S3 endpoint for backup storage
+      endpoint: "http://garage.garage.svc.cluster.local:3900"
+      # -- Garage region (required for bucket access)
+      region: garage
+      # -- Reference to pre-provisioned Secret with Garage credentials
+      credentialsSecret:
+        name: ""
+        accessKeyKey: accessKey
+        secretKeyKey: secretKey
 
 # -- Redis-compatible cache (required by Ghostfolio)
 redis:
