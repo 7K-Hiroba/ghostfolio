@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ghostfolio
+  namespace: argocd
+spec:
+  sourceRepos:
+    - https://github.com/7K-Hiroba/ghostfolio.git
+  destinations:
+    - namespace: ghostfolio
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace

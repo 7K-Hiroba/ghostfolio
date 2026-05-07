@@ -126,6 +126,9 @@ affinity: {}
 #           key: JWT_SECRET_KEY
 env: []
 
+# -- Environment variable sources (e.g., secretRef for platform ExternalSecret).
+envFrom: []
+
 # -- Extra volumes added to the pod. A /tmp emptyDir is included by default
 # to satisfy readOnlyRootFilesystem while allowing Node.js and Prisma temp
 # file writes.

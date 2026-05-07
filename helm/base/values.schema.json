@@ -173,6 +173,7 @@
     "tolerations": { "type": "array" },
     "affinity": { "type": "object" },
     "env": { "type": "array" },
+    "envFrom": { "type": "array" },
     "extraVolumes": { "type": "array" },
     "extraVolumeMounts": { "type": "array" }
   },

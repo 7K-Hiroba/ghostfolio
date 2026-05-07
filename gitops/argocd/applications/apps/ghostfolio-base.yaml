@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghostfolio-base
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ghostfolio
+  source:
+    repoURL: https://github.com/7K-Hiroba/ghostfolio.git
+    targetRevision: HEAD
+    path: helm/base
+    helm:
+      valuesObject:
+        replicaCount: 1
+        image:
+          repository: docker.io/ghostfolio/ghostfolio
+          pullPolicy: IfNotPresent
+        gateway:
+          enabled: true
+          parentRefs:
+            - name: default-gateway
+          hostnames:
+            - ghostfolio.example.com
+        env:
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: ghostfolio-pg-app
+                key: uri
+          - name: REDIS_HOST
+            value: ghostfolio-redis
+          - name: REDIS_PORT
+            value: "6379"
+        envFrom:
+          - secretRef:
+              name: ghostfolio
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ghostfolio
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

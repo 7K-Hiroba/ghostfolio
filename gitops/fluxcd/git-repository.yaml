@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: ghostfolio
+  namespace: flux-system
+spec:
+  interval: 5m
+  url: https://github.com/7K-Hiroba/ghostfolio.git
+  ref:
+    branch: main

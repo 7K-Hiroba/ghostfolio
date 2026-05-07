@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghostfolio-platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ghostfolio
+  source:
+    repoURL: https://github.com/7K-Hiroba/ghostfolio.git
+    targetRevision: HEAD
+    path: helm/platform
+    helm:
+      valuesObject:
+        global:
+          appName: ghostfolio
+        postgres:
+          enabled: true
+          provider: cnpg
+          instances: 1
+          storage:
+            size: 10Gi
+          database: ghostfolio
+          owner: ghostfolio
+          backup:
+            enabled: false
+        redis:
+          enabled: true
+          provider: dragonfly
+          replicas: 1
+          dragonfly:
+            authentication:
+              enabled: true
+              passwordSecretRef:
+                name: ghostfolio
+                key: REDIS_PASSWORD
+        externalSecrets:
+          enabled: true
+          refreshInterval: 1h
+          storeRef:
+            name: cluster-secret-store
+            kind: ClusterSecretStore
+          data:
+            - secretKey: REDIS_PASSWORD
+              remoteKey: ghostfolio/redis
+              property: password
+            - secretKey: ACCESS_TOKEN_SALT
+              remoteKey: ghostfolio/auth
+              property: access-token-salt
+            - secretKey: JWT_SECRET_KEY
+              remoteKey: ghostfolio/auth
+              property: jwt-secret-key
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ghostfolio
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
