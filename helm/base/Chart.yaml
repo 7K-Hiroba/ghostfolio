@@ -18,6 +18,7 @@ home: https://ghostfol.io
 sources:
   - https://github.com/7K-Hiroba/ghostfolio
   - https://github.com/ghostfolio/ghostfolio
+icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/ghostfolio.svg
 annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |

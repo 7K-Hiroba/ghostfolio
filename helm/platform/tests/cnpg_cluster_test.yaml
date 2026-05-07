@@ -4,6 +4,7 @@ templates:
 capabilities:
   apiVersions:
     - postgresql.cnpg.io/v1
+    - barmancloud.cnpg.io/v1
 tests:
   - it: is not created when postgres is disabled
     set:
@@ -16,9 +17,11 @@ tests:
     set:
       postgres.enabled: true
     asserts:
-      - isKind:
+      - documentIndex: 0
+        isKind:
           of: Cluster
-      - equal:
+      - documentIndex: 0
+        equal:
           path: apiVersion
           value: postgresql.cnpg.io/v1
 
@@ -31,13 +34,16 @@ tests:
           size: 20Gi
           storageClass: fast-ssd
     asserts:
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.instances
           value: 3
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.storage.size
           value: 20Gi
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.storage.storageClass
           value: fast-ssd
 
@@ -45,10 +51,12 @@ tests:
     set:
       postgres.enabled: true
     asserts:
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.bootstrap.initdb.database
           value: ghostfolio
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.bootstrap.initdb.owner
           value: ghostfolio
 
@@ -59,10 +67,12 @@ tests:
         database: mydb
         owner: myuser
     asserts:
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.bootstrap.initdb.database
           value: mydb
-      - equal:
+      - documentIndex: 0
+        equal:
           path: spec.bootstrap.initdb.owner
           value: myuser
 
@@ -73,17 +83,130 @@ tests:
         backup:
           enabled: false
     asserts:
-      - isNull:
+      - documentIndex: 0
+        isNull:
           path: spec.backup
+      - documentIndex: 0
+        isNull:
+          path: spec.plugins
+      - hasDocuments:
+          count: 1
 
-  - it: includes backup config when enabled
+  - it: renders one document when backup is disabled
+    set:
+      postgres:
+        enabled: true
+        backup:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: renders two documents when backup is enabled
     set:
       postgres:
         enabled: true
         backup:
           enabled: true
           retentionPolicy: "30d"
+          garage:
+            endpoint: "http://garage.garage.svc.cluster.local:3900"
+            region: garage
+            credentialsSecret:
+              name: myapp-pg-garage-key
+              accessKeyKey: accessKey
+              secretKeyKey: secretKey
     asserts:
-      - equal:
+      - hasDocuments:
+          count: 2
+
+  - it: includes plugins and backup config when enabled
+    set:
+      postgres:
+        enabled: true
+        backup:
+          enabled: true
+          retentionPolicy: "30d"
+          garage:
+            endpoint: "http://garage.garage.svc.cluster.local:3900"
+            region: garage
+            credentialsSecret:
+              name: myapp-pg-garage-key
+              accessKeyKey: accessKey
+              secretKeyKey: secretKey
+    asserts:
+      - documentIndex: 0
+        equal:
           path: spec.backup.retentionPolicy
           value: "30d"
+      - documentIndex: 0
+        equal:
+          path: spec.plugins[0].name
+          value: barman-cloud.cloudnative-pg.io
+      - documentIndex: 0
+        equal:
+          path: spec.plugins[0].parameters.barmanObjectName
+          value: ghostfolio-pg-barman
+
+  - it: renders ObjectStore as second document when backup is enabled
+    set:
+      postgres:
+        enabled: true
+        backup:
+          enabled: true
+          retentionPolicy: "7d"
+          garage:
+            endpoint: "http://garage.garage.svc.cluster.local:3900"
+            region: garage
+            credentialsSecret:
+              name: ghostfolio-pg-garage-key
+              accessKeyKey: accessKey
+              secretKeyKey: secretKey
+    asserts:
+      - documentIndex: 1
+        isKind:
+          of: ObjectStore
+      - documentIndex: 1
+        equal:
+          path: apiVersion
+          value: barmancloud.cnpg.io/v1
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: ghostfolio-pg-barman
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.destinationPath
+          value: "s3://ghostfolio-pg-backups/"
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.endpointURL
+          value: "http://garage.garage.svc.cluster.local:3900"
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.region
+          value: garage
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.s3Credentials.accessKeyId.name
+          value: ghostfolio-pg-garage-key
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.s3Credentials.accessKeyId.key
+          value: accessKey
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.s3Credentials.secretAccessKey.name
+          value: ghostfolio-pg-garage-key
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.s3Credentials.secretAccessKey.key
+          value: secretKey
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.wal.compression
+          value: gzip
+      - documentIndex: 1
+        equal:
+          path: spec.configuration.data.compression
+          value: gzip
