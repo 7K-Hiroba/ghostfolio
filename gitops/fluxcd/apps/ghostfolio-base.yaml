@@ -36,6 +36,17 @@ spec:
         value: ghostfolio-redis
       - name: REDIS_PORT
         value: "6379"
+      - name: ENABLE_FEATURE_AUTH_OIDC
+        value: "true"
+      - name: OIDC_ISSUER
+        value: https://keycloak.example.com/realms/myrealm
+      - name: OIDC_CLIENT_ID
+        value: ghostfolio
+      - name: OIDC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: ghostfolio
+            key: OIDC_CLIENT_SECRET
     envFrom:
       - secretRef:
           name: ghostfolio

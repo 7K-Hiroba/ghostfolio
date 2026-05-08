@@ -100,30 +100,40 @@ affinity: {}
 # and JWT_SECRET_KEY. Prefer referencing a Secret created by the platform
 # chart's ExternalSecret rather than inlining values here.
 #
+# Required env vars:
+#   DATABASE_URL       — PostgreSQL connection string (from CNPG secret `uri` key)
+#   REDIS_HOST         — Dragonfly/Redis service name
+#   ACCESS_TOKEN_SALT  — Random salt for access tokens (from ExternalSecret)
+#   JWT_SECRET_KEY     — Random key for JWT signing (from ExternalSecret)
+#
+# OIDC env vars (optional, enable SSO via Keycloak/Authentik/Authelia):
+#   ENABLE_FEATURE_AUTH_OIDC — Set to "true" to enable OIDC
+#   OIDC_ISSUER              — IdP issuer URL (e.g. https://keycloak.example.com/realms/myrealm)
+#   OIDC_CLIENT_ID           — Client ID registered with the IdP
+#   OIDC_CLIENT_SECRET       — Client secret (from ExternalSecret, NOT inline)
+#
 # Example:
 #   env:
 #     - name: DATABASE_URL
 #       valueFrom:
 #         secretKeyRef:
-#           name: ghostfolio
-#           key: DATABASE_URL
+#           name: ghostfolio-pg-app
+#           key: uri
 #     - name: REDIS_HOST
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: REDIS_HOST
+#       value: ghostfolio-redis
 #     - name: REDIS_PORT
 #       value: "6379"
-#     - name: ACCESS_TOKEN_SALT
+#     - name: ENABLE_FEATURE_AUTH_OIDC
+#       value: "true"
+#     - name: OIDC_ISSUER
+#       value: https://keycloak.example.com/realms/myrealm
+#     - name: OIDC_CLIENT_ID
+#       value: ghostfolio
+#     - name: OIDC_CLIENT_SECRET
 #       valueFrom:
 #         secretKeyRef:
 #           name: ghostfolio
-#           key: ACCESS_TOKEN_SALT
-#     - name: JWT_SECRET_KEY
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: JWT_SECRET_KEY
+#           key: OIDC_CLIENT_SECRET
 env: []
 
 # -- Environment variables from ConfigMap or Secret references.
@@ -133,7 +143,7 @@ env: []
 # Example:
 #   envFrom:
 #     - secretRef:
-#         name: ghostfolio-secrets
+#         name: ghostfolio
 envFrom: []
 
 # -- Extra volumes added to the pod. A /tmp emptyDir is included by default

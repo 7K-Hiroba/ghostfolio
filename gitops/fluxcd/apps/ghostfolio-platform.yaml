@@ -55,3 +55,6 @@ spec:
         - secretKey: JWT_SECRET_KEY
           remoteKey: ghostfolio/auth
           property: jwt-secret-key
+        - secretKey: OIDC_CLIENT_SECRET
+          remoteKey: ghostfolio/auth
+          property: oidc-client-secret

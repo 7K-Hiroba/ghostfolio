@@ -112,6 +112,45 @@ tests:
             secretRef:
               name: ghostfolio-secrets
 
+  - it: renders OIDC env vars when set
+    set:
+      env:
+        - name: ENABLE_FEATURE_AUTH_OIDC
+          value: "true"
+        - name: OIDC_ISSUER
+          value: https://keycloak.example.com/realms/myrealm
+        - name: OIDC_CLIENT_ID
+          value: ghostfolio
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ghostfolio
+              key: OIDC_CLIENT_SECRET
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_FEATURE_AUTH_OIDC
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_ISSUER
+            value: https://keycloak.example.com/realms/myrealm
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+            value: ghostfolio
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: ghostfolio
+                key: OIDC_CLIENT_SECRET
+
   - it: mounts /tmp by default for Prisma and Node.js temp files
     asserts:
       - contains:

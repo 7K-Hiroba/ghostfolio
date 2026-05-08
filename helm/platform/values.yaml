@@ -121,8 +121,9 @@ s3:
     replicationFactor: 3
 
 # -- External Secrets (external-secrets.io)
-# Use this to pull Ghostfolio's required secrets (DATABASE_URL, JWT_SECRET_KEY,
-# ACCESS_TOKEN_SALT, REDIS_PASSWORD) from your secret backend.
+# Use this to pull Ghostfolio's required secrets (ACCESS_TOKEN_SALT,
+# JWT_SECRET_KEY, REDIS_PASSWORD, OIDC_CLIENT_SECRET) from your secret backend.
+# DATABASE_URL is sourced from the CNPG secret instead.
 externalSecrets:
   enabled: false
   # -- How often to sync secrets
@@ -133,12 +134,6 @@ externalSecrets:
     kind: ClusterSecretStore
   # -- Individual secret mappings
   data: []
-  #  - secretKey: DATABASE_URL
-  #    remoteKey: ghostfolio/database
-  #    property: url
-  #  - secretKey: REDIS_HOST
-  #    remoteKey: ghostfolio/redis
-  #    property: host
   #  - secretKey: REDIS_PASSWORD
   #    remoteKey: ghostfolio/redis
   #    property: password
@@ -148,12 +143,16 @@ externalSecrets:
   #  - secretKey: JWT_SECRET_KEY
   #    remoteKey: ghostfolio/auth
   #    property: jwt-secret-key
+  #  - secretKey: OIDC_CLIENT_SECRET
+  #    remoteKey: ghostfolio/auth
+  #    property: oidc-client-secret
   # -- Pull all keys from a remote path
   dataFrom: []
   #  - extract:
   #      key: ghostfolio/config
   # -- Optional target Secret template for value transformation.
   # See https://external-secrets.io/latest/guides/templating/
+  # Use this to compose DATABASE_URL from CNPG secret values pulled via dataFrom.
   target:
     template: {}
     # type: Opaque
