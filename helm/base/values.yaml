@@ -126,7 +126,14 @@ affinity: {}
 #           key: JWT_SECRET_KEY
 env: []
 
-# -- Environment variable sources (e.g., secretRef for platform ExternalSecret).
+# -- Environment variables from ConfigMap or Secret references.
+# Use this to inject all keys from a Secret (e.g. one created by the platform
+# chart's ExternalSecret) as environment variables.
+#
+# Example:
+#   envFrom:
+#     - secretRef:
+#         name: ghostfolio-secrets
 envFrom: []
 
 # -- Extra volumes added to the pod. A /tmp emptyDir is included by default

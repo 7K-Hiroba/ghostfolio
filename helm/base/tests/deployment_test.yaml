@@ -100,6 +100,18 @@ tests:
             name: DATABASE_URL
             value: "postgresql://ghostfolio:secret@localhost:5432/ghostfolio"
 
+  - it: renders envFrom when set
+    set:
+      envFrom:
+        - secretRef:
+            name: ghostfolio-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: ghostfolio-secrets
+
   - it: mounts /tmp by default for Prisma and Node.js temp files
     asserts:
       - contains:
