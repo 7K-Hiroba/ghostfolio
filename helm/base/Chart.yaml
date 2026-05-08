@@ -5,7 +5,7 @@ description: >-
   cryptocurrencies to support data-driven investment decisions.
 type: application
 version: 1.0.1
-appVersion: "2.130.0"
+appVersion: "3.2.0"
 maintainers:
   - name: 7k-hiroba
 keywords:

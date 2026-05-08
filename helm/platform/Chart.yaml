@@ -5,7 +5,7 @@ description: >-
   (Dragonfly), secrets, storage, and observability resources.
 type: application
 version: 1.0.0
-appVersion: "0.1.0"
+appVersion: "3.2.0"
 maintainers:
   - name: 7k-hiroba
 keywords:

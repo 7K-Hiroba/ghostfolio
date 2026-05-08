@@ -96,54 +96,20 @@ tolerations: []
 affinity: {}
 
 # -- Environment variables injected into the Ghostfolio container.
-# At minimum you must set DATABASE_URL, REDIS_HOST, ACCESS_TOKEN_SALT,
-# and JWT_SECRET_KEY. Prefer referencing a Secret created by the platform
-# chart's ExternalSecret rather than inlining values here.
+# See docs/helm-base.md for the full list of supported variables and examples.
 #
-# Required env vars:
-#   DATABASE_URL       — PostgreSQL connection string (from CNPG secret `uri` key)
-#   REDIS_HOST         — Dragonfly/Redis service name
-#   ACCESS_TOKEN_SALT  — Random salt for access tokens (from ExternalSecret)
-#   JWT_SECRET_KEY     — Random key for JWT signing (from ExternalSecret)
-#
-# OIDC env vars (optional, enable SSO via Keycloak/Authentik/Authelia):
-#   ENABLE_FEATURE_AUTH_OIDC — Set to "true" to enable OIDC
-#   OIDC_ISSUER              — IdP issuer URL (e.g. https://keycloak.example.com/realms/myrealm)
-#   OIDC_CLIENT_ID           — Client ID registered with the IdP
-#   OIDC_CLIENT_SECRET       — Client secret (from ExternalSecret, NOT inline)
-#
-# Example:
-#   env:
-#     - name: DATABASE_URL
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio-pg-app
-#           key: uri
-#     - name: REDIS_HOST
-#       value: ghostfolio-redis
-#     - name: REDIS_PORT
-#       value: "6379"
-#     - name: ENABLE_FEATURE_AUTH_OIDC
-#       value: "true"
-#     - name: OIDC_ISSUER
-#       value: https://keycloak.example.com/realms/myrealm
-#     - name: OIDC_CLIENT_ID
-#       value: ghostfolio
-#     - name: OIDC_CLIENT_SECRET
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: OIDC_CLIENT_SECRET
+# env:
+#   - name: DATABASE_URL
+#     valueFrom:
+#       secretKeyRef:
+#         name: ghostfolio-pg-app
+#         key: uri
+#   - name: REDIS_HOST
+#     value: ghostfolio-redis
 env: []
 
 # -- Environment variables from ConfigMap or Secret references.
-# Use this to inject all keys from a Secret (e.g. one created by the platform
-# chart's ExternalSecret) as environment variables.
-#
-# Example:
-#   envFrom:
-#     - secretRef:
-#         name: ghostfolio
+# See docs/helm-base.md for examples.
 envFrom: []
 
 # -- Extra volumes added to the pod. A /tmp emptyDir is included by default
