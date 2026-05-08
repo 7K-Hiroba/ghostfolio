@@ -18,8 +18,7 @@ keywords:
 home: https://github.com/7K-Hiroba/ghostfolio
 sources:
   - https://github.com/7K-Hiroba/ghostfolio
-icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/vikunja.svg
-
+icon: https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/ghostfolio.svg
 annotations:
   artifacthub.io/category: monitoring-logging
   artifacthub.io/license: Apache-2.0
