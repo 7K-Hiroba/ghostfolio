@@ -2,191 +2,169 @@
 
 This file is for AI agents and automated tools making changes to this repository. Read this before modifying any files.
 
+## What This Repo Is
+
+A **purely infrastructure repo** — no `src/`, no `Dockerfile`, no application code. Ghostfolio uses the official upstream image (`docker.io/ghostfolio/ghostfolio`). Both Helm charts and GitOps manifests live here; the base chart deploys the upstream container, the platform chart wires in databases, cache, secrets, and observability.
+
 ## Philosophy: Near-Native
 
-This project follows a **near-native** approach. We prefer upstream, official solutions over custom implementations.
-
-- If the application has an **official Helm chart**, use it as the base rather than writing one from scratch. The `helm/base/` directory may contain the upstream chart as a dependency or a thin wrapper around it.
-- If the application has an **official Docker image**, use it. Only maintain a custom Dockerfile if the 7KGroup admins have determined the maintenance cost is justified (e.g., the official image is poorly maintained, insecure, or missing required features).
-- The **platform chart** (`helm/platform/`) is always custom. This is where Hiroba adds value — wiring in databases, storage, secrets, observability, and other infrastructure that the upstream chart does not provide.
-
-**Do not rewrite what upstream already does well.** The people who build the application know it best.
+Prefer upstream, official solutions over custom implementations. The base chart wraps the official image; the platform chart is always custom (that is where Hiroba adds value). **Do not rewrite what upstream already does well.**
 
 ## Repository Structure
 
 ```text
 ├── helm/
-│   ├── base/                          # Application Helm chart
-│   │   ├── Chart.yaml                 # May declare upstream chart as dependency
-│   │   ├── values.yaml                # Overrides for upstream + custom values
-│   │   ├── values.schema.json         # JSON Schema for values validation (required)
-│   │   ├── templates/                 # Only if extending upstream; otherwise minimal
-│   │   └── tests/                     # helm-unittest test suites
-│   └── platform/                      # Platform dependencies (always custom)
-│       ├── values.yaml
-│       ├── values.schema.json         # JSON Schema for values validation (required)
-│       ├── tests/                     # helm-unittest test suites
-│       └── templates/
-│           ├── database/              # CNPG clusters, etc.
-│           ├── storage/               # S3 buckets (Crossplane, Garage, etc.)
-│           ├── secrets/               # ExternalSecrets
-│           └── observability/         # ServiceMonitors, Grafana dashboards, PrometheusRules
-├── crossplane/                        # Crossplane XRDs & Compositions this app PROVIDES
-│   └── examples/                      # Example Claims for consumers
+│   ├── base/                          # Application Helm chart (Deployment, Service, HTTPRoute, etc.)
+│   │   ├── Chart.yaml                 # appVersion tracks upstream Ghostfolio version
+│   │   ├── values.yaml                # Overrides + custom values
+│   │   ├── values.schema.json         # Required — CI validates against this
+│   │   ├── templates/                 # deployment, service, httproute, hpa, pdb, serviceaccount
+│   │   └── tests/                     # helm-unittest suites (<template>_test.yaml)
+│   ├── platform/                      # Platform dependencies (always custom)
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   ├── values.schema.json
+│   │   ├── .ci-api-versions           # CRD versions simulated in CI (must update when adding operators)
+│   │   ├── dashboards/                # Grafana dashboard JSON files
+│   │   ├── templates/
+│   │   │   ├── _helpers.tpl           # platform.name, platform.labels, platform.baseSelectorLabels
+│   │   │   ├── checks.yaml           # Operator-presence checks — fail at render time if CRD missing
+│   │   │   ├── database/             # CNPG cluster, CNPG scheduled backup, Dragonfly Redis
+│   │   │   ├── storage/              # S3 via Crossplane, S3 via Garage
+│   │   │   ├── secrets/              # ExternalSecret
+│   │   │   └── observability/        # ServiceMonitor, GrafanaDashboard, PrometheusRules
+│   │   └── tests/
+│   ├── base-artifacthub-repo.yml      # ArtifactHub metadata for base chart
+│   └── platform-artifacthub-repo.yml  # ArtifactHub metadata for platform chart
+├── compositions/
+│   └── crossplane/                    # Crossplane XRDs & Compositions (placeholder — examples only)
+│       └── examples/
 ├── gitops/
-│   ├── argocd/                        # ArgoCD Application manifests
+│   ├── argocd/                        # ArgoCD Application manifests (root.yaml + applications/)
 │   └── fluxcd/                        # FluxCD Kustomization manifests
-├── docs/                              # TechDocs content (published via Backstage)
-├── .github/workflows/                 # CI/CD — references 7K-Hiroba/workflows-library
-├── Dockerfile                         # Only if a custom image is maintained
-└── catalog-info.yaml                  # Backstage catalog registration
+├── docs/                              # TechDocs (Docusaurus, published via Backstage)
+└── catalog-info.yaml                  # Backstage catalog entry
 ```
+
+## Ghostfolio-Specific Facts
+
+- **Upstream image**: `docker.io/ghostfolio/ghostfolio` — do not add a Dockerfile
+- **App listens on port 3333** (configurable via `PORT` env var). `service.targetPort` is already set to `3333`.
+- **Health endpoint**: `/api/v1/health` (used for both liveness and readiness probes)
+- **readOnlyRootFilesystem: true** — a `/tmp` emptyDir volume is required for Node.js/Prisma temp writes. Already configured in `values.yaml` under `extraVolumes`/`extraVolumeMounts`.
+- **Required env vars** (set via `env`/`envFrom` in base chart):
+  - `DATABASE_URL` — from CNPG secret `uri` key
+  - `REDIS_HOST` — Dragonfly service name
+  - `ACCESS_TOKEN_SALT` — random salt
+  - `JWT_SECRET_KEY` — random key
+- **Optional OIDC env vars**: `ENABLE_FEATURE_AUTH_OIDC`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`
+- **Platform resources**: `postgres` (CNPG) and `redis` (Dragonfly) are both enabled by default; `s3`, `externalSecrets`, and `observability` are disabled by default
 
 ## Where to Add What
 
 ### Application changes (deployment, ports, probes, scaling)
 
-Modify `helm/base/values.yaml` or, if using an upstream chart as a dependency, override values there. Do not duplicate upstream template logic — use the upstream chart's configuration surface.
+Modify `helm/base/values.yaml`. The base chart is self-authored (not wrapping an upstream chart), so changes go directly in its templates and values.
 
-### Database, storage, secrets, or observability
+### Database, cache, storage, secrets, or observability
 
-Add or modify resources under `helm/platform/templates/<category>/`. Each resource is gated by an `enabled` flag in `helm/platform/values.yaml`. Respect the subfolder organization:
+Add or modify resources under `helm/platform/templates/<category>/`. Each resource is gated by an `enabled` flag in `helm/platform/values.yaml`.
 
-| Category | Path | Examples |
+| Category | Path | Resources |
 | --- | --- | --- |
-| database | `templates/database/` | CNPG Cluster |
+| database | `templates/database/` | CNPG Cluster, CNPG Scheduled Backup, Dragonfly Redis |
 | storage | `templates/storage/` | S3 via Crossplane, S3 via Garage |
 | secrets | `templates/secrets/` | ExternalSecret |
-| observability | `templates/observability/` | ServiceMonitor, GrafanaDashboard, PrometheusRule |
+| observability | `templates/observability/` | ServiceMonitor, GrafanaDashboard, PrometheusRules |
 
 ### New platform provider variant
 
-Platform resources support a `provider` switch. To add a new provider for an existing resource (e.g., a MinIO provider for S3):
+1. Create `helm/platform/templates/<category>/<resource>-<provider>.yaml`
+2. Gate it with `{{- if and .Values.<resource>.enabled (eq .Values.<resource>.provider "<provider>") }}`
+3. Add provider-specific values under `<resource>.<provider>:` in `values.yaml`
+4. Add the provider to the `enum` in `values.schema.json`
+5. Add the CRD API version to `.ci-api-versions` and a check in `checks.yaml`
 
-1. Create `helm/platform/templates/storage/s3-minio.yaml`
-2. Gate it with `{{- if and .Values.s3.enabled (eq .Values.s3.provider "minio") }}`
-3. Add provider-specific values under `s3.minio:` in `values.yaml`
+### Grafana dashboards
 
-### Crossplane compositions this app provides
+Place JSON files in `helm/platform/dashboards/`. The `grafana-dashboard.yaml` template mounts them as a ConfigMap with `grafana_dashboard: "1"` label.
 
-If this application exposes infrastructure that other apps can consume (e.g., a Keycloak deployment providing realm provisioning), add XRDs and Compositions under `crossplane/`. Place example Claims in `crossplane/examples/` so consumers know the API.
-
-### GitOps orchestration
-
-ArgoCD and FluxCD manifests live under `gitops/`. There are separate manifests for base and platform charts because they have different lifecycles — the base chart deploys frequently, platform resources change rarely.
-
-### Documentation
-
-All docs go under `docs/` and are published via Docusaurus. Keep docs in Markdown.
-If updating the helm chart, be sure the corresponding README.md is also updated
-
-### CI/CD workflows
-
-There are two workflow files — `ci.yml` and `release-please.yml` — each calling a **single reusable workflow** from `7K-Hiroba/workflows-library` with a `stack` parameter to differentiate behavior. Do not inline CI/CD logic — add capabilities to the library workflow instead.
-
-| Stack | `stack` param | CI trigger (path) | Release tag | release-please type |
-| --- | --- | --- | --- | --- |
-| App (Dockerfile) | `app` | `Dockerfile`, `src/` | `app/v*` | `simple` |
-| Helm Base | `helm` | `helm/base/` | `helm-base/v*` | `helm` (bumps Chart.yaml) |
-| Helm Platform | `helm` | `helm/platform/` | `helm-platform/v*` | `helm` (bumps Chart.yaml) |
-| Docs | `docs` | `docs/` | `docs/v*` | `simple` |
-| Crossplane | `crossplane` | `crossplane/` | `crossplane/v*` | `simple` |
-
-**CI** (`ci.yml`) — jobs run conditionally based on which paths changed. The library workflow decides what to do based on `stack`: lint+template+unittest+test for `helm`, build+scan for `app`, validate for `crossplane`, etc.
-
-**Releases** (`release-please.yml`) — fully automated via [release-please](https://github.com/googleapis/release-please). On every push to `main`, release-please reads conventional commits, determines which stacks need a release, and opens separate release PRs per component. When a release PR is merged, it creates the tag + GitHub Release and triggers the publish job for that stack.
-
-**Commit messages drive versioning** — use [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `fix(helm-base): correct probe path` → patch bump
-- `feat(app): add health endpoint` → minor bump
-- `feat(helm-platform)!: change CNPG API version` → major bump (breaking `!`)
-
-The scope in the commit message should match the component path or name. Release-please uses path-based detection to assign commits to components.
-
-**Configuration files:**
-
-- `release-please-config.json` — component definitions, release types, changelog settings
-- `.release-please-manifest.json` — tracks current version per component (committed by release-please)
-
-## Technical Specifics
-
-### API versions
-
-- Prefer the **latest stable (GA) API version** for every resource. Avoid `v1alphaN` / `v1betaN` when a GA `v1` (or newer) exists upstream.
-- When an upstream operator promotes an API to GA, update the template, the `_checks.yaml` capability probe, and any `helm unittest` fixtures together so they stay in sync.
-- Only fall back to alpha/beta when upstream ships no GA version (e.g. `argoproj.io/v1alpha1` for Argo CD Application, `backstage.io/v1alpha1` for Backstage catalog entities).
+## Conventions
 
 ### Helm
 
 - API version: `apiVersion: v2`
-- All resources use `app.kubernetes.io/*` standard labels via `_helpers.tpl`
-- All resources include `app.kubernetes.io/part-of: hiroba` for traceability
+- All resources use `app.kubernetes.io/*` labels via `_helpers.tpl` (base: `app.*` helpers; platform: `platform.*` helpers)
+- All resources include `app.kubernetes.io/part-of: hiroba`
 - Security defaults: `runAsNonRoot: true`, `readOnlyRootFilesystem: true`, all capabilities dropped
 - External traffic uses **Gateway API** (`gateway.networking.k8s.io/v1` HTTPRoute), not Ingress
-- Every chart **must** include a `values.schema.json` — CI will fail without it. Helm lint and template rendering validate values against this schema automatically
-- Every chart **must** include unit tests under `tests/` using [helm-unittest](https://github.com/helm-unittest/helm-unittest). Test files follow the naming convention `<template>_test.yaml`
+- Every chart **must** include `values.schema.json` and unit tests under `tests/`
 
-### Values schema conventions
+### Values schema
 
-- Use [JSON Schema draft-07](https://json-schema.org/draft-07/schema#)
-- Set `additionalProperties: false` on key objects to catch typos
-- Mark essential fields as `required` (e.g., `image`, `service`, `global.appName`)
-- Use `enum` for fields with a fixed set of values (e.g., `pullPolicy`, `provider`)
-- When adding a new value to `values.yaml`, always add the corresponding entry in `values.schema.json`
+- JSON Schema draft-07, `additionalProperties: false` on key objects
+- When adding a new value to `values.yaml`, always add the corresponding schema entry in `values.schema.json`
 
-### Unit test conventions
+### Unit tests
 
-- Tests live in `tests/` inside each chart directory
 - One test file per template: `<template>_test.yaml`
-- Each test file declares `suite`, `templates`, and a list of `tests`
-- For platform chart tests, set `capabilities.apiVersions` to satisfy CRD checks in `_checks.yaml`
-- Test both the default state (enabled/disabled) and customized values
-- Test conditional rendering (e.g., resource created when enabled, absent when disabled)
+- For platform chart tests, set `capabilities.apiVersions` to satisfy `checks.yaml` (see existing tests for the pattern)
+- Test both enabled and disabled states; test conditional rendering
 
-### Platform chart conventions
+### Platform chart
 
-- Every resource must be gated behind `<resource>.enabled` (default `false`)
-- Resources with multiple backends must use a `<resource>.provider` switch
-- Template files are named `<resource>-<provider>.yaml` inside the appropriate subfolder
-- Use the `platform.name` and `platform.labels` helpers from `_helpers.tpl`
+- Every resource gated behind `<resource>.enabled` (default `false` for optional resources)
+- Provider switch: `<resource>.provider` selects the template variant
+- Template naming: `<resource>-<provider>.yaml` inside the category subfolder
 
-### Container images
+### API versions
 
-- Prefer the official upstream image. Only build custom if justified.
-- If custom: multi-stage build, non-root user (UID 1000), pinned base image versions, OCI labels
-- Never use `:latest` tags
-
-### Gateway API
-
-- Use `gateway.networking.k8s.io/v1` HTTPRoute (not Ingress)
-- Routes reference a parent Gateway via `parentRefs`
-- Default is a catch-all PathPrefix `/` route to the Service
+- Prefer latest stable (GA) API version. Only use alpha/beta when no GA version exists upstream.
+- When adding a new operator dependency, update **all three**: the template, `checks.yaml`, and `.ci-api-versions`
 
 ### External Secrets
 
 - Use `external-secrets.io/v1` ExternalSecret
 - Reference a `ClusterSecretStore` by default
-- Map individual keys via `data[]` or bulk-import via `dataFrom[]`
+- Map keys via `data[]` or bulk-import via `dataFrom[]`
 
-### Observability
+## CI/CD
 
-- ServiceMonitor for Prometheus scraping (requires prometheus-operator)
-- Grafana dashboards deployed as ConfigMaps with `grafana_dashboard: "1"` label (sidecar discovery)
-- PrometheusRules for alerting (error rate, latency)
+### CI (`.github/workflows/ci.yml`)
+
+- **PR title lint** — must follow Conventional Commits
+- **Helm chart jobs** — conditional on path changes to `helm/base/` or `helm/platform/`
+- **Docs job** — conditional on path changes to `docs/`
+- The `.ci-api-versions` file is auto-loaded by the reusable workflow to simulate CRDs during `helm template`
+
+### Releases (`.github/workflows/release-please.yml`)
+
+Fully automated via release-please. Commit messages drive versioning using [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `fix(helm-base): correct probe path` → patch bump
+- `feat(helm-platform): add redis provider` → minor bump
+- `feat(helm-base)!: change gateway API version` → major bump
+
+Scope must match the component. Release-please uses path-based detection:
+
+| Component | Path | Tag prefix | release-please type |
+| --- | --- | --- | --- |
+| app | (no Dockerfile yet) | `app/v*` | `simple` |
+| helm-base | `helm/base/` | `helm-base/v*` | `helm` |
+| helm-platform | `helm/platform/` | `helm-platform/v*` | `helm` |
+| docs | `docs/` | `docs/v*` | `simple` |
+| crossplane | `compositions/crossplane/` | `crossplane/v*` | `simple` |
+
+Config files: `release-please-config.json` (component definitions), `.release-please-manifest.json` (version tracking, committed by release-please).
+
+**Note**: The `app` component is defined in release-please config but no Dockerfile exists yet. Do not add one unless explicitly asked.
 
 ## Markdown Linting
 
-CI runs [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) on every pull request. Any violation fails the build.
-
-**After creating or editing any `.md` file, you must run the linter before committing:**
+CI runs `markdownlint-cli2`. Config (`.markdownlint.yaml`): only `MD013` (line length) is disabled.
 
 ```bash
 npx markdownlint-cli2 "**/*.md"
 ```
 
-- Rules are configured in `.markdownlint.yaml` at the repository root.
-- Fix every reported error. Do not disable rules inline or in config to silence warnings — fix the underlying markup instead.
-- Common issues: fenced code blocks without a language tag (MD040), table separator rows missing spaces around pipes (MD060), missing blank lines before/after lists and headings (MD032, MD022), and duplicate heading text across sections (MD024).
-- If you add a new Markdown file, ensure it starts with a top-level `# Heading` (MD041).
-- Run the linter again after making fixes to confirm zero errors before committing.
+Fix errors by correcting markup — do not disable rules inline. New `.md` files must start with a top-level heading (MD041).
