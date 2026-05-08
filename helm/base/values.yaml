@@ -42,7 +42,7 @@ service:
 # -- Public URL of the Ghostfolio instance (ROOT_URL).
 # Must be set when using OIDC — the callback URL defaults to
 # ${ROOT_URL}/api/auth/oidc/callback. Also required for passkey/biometric auth.
-rootUrl  : ""
+rootUrl: ""
 
 gateway:
   enabled: true
