@@ -39,6 +39,11 @@ service:
   # -- Ghostfolio listens on port 3333 by default (configurable via PORT env var)
   targetPort: 3333
 
+# -- Public URL of the Ghostfolio instance (ROOT_URL).
+# Must be set when using OIDC — the callback URL defaults to
+# ${ROOT_URL}/api/auth/oidc/callback. Also required for passkey/biometric auth.
+rootUrl: ""
+
 gateway:
   enabled: true
   annotations: {}
@@ -96,35 +101,21 @@ tolerations: []
 affinity: {}
 
 # -- Environment variables injected into the Ghostfolio container.
-# At minimum you must set DATABASE_URL, REDIS_HOST, ACCESS_TOKEN_SALT,
-# and JWT_SECRET_KEY. Prefer referencing a Secret created by the platform
-# chart's ExternalSecret rather than inlining values here.
+# See docs/helm-base.md for the full list of supported variables and examples.
 #
-# Example:
-#   env:
-#     - name: DATABASE_URL
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: DATABASE_URL
-#     - name: REDIS_HOST
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: REDIS_HOST
-#     - name: REDIS_PORT
-#       value: "6379"
-#     - name: ACCESS_TOKEN_SALT
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: ACCESS_TOKEN_SALT
-#     - name: JWT_SECRET_KEY
-#       valueFrom:
-#         secretKeyRef:
-#           name: ghostfolio
-#           key: JWT_SECRET_KEY
+# env:
+#   - name: DATABASE_URL
+#     valueFrom:
+#       secretKeyRef:
+#         name: ghostfolio-pg-app
+#         key: uri
+#   - name: REDIS_HOST
+#     value: ghostfolio-redis
 env: []
+
+# -- Environment variables from ConfigMap or Secret references.
+# See docs/helm-base.md for examples.
+envFrom: []
 
 # -- Extra volumes added to the pod. A /tmp emptyDir is included by default
 # to satisfy readOnlyRootFilesystem while allowing Node.js and Prisma temp

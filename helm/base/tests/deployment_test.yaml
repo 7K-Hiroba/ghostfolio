@@ -31,7 +31,7 @@ tests:
     asserts:
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: ":2\\.130\\.0$"
+          pattern: ":3\\.2\\.0$"
 
   - it: omits replicas when autoscaling is enabled
     set:
@@ -88,6 +88,42 @@ tests:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
           value: /api/v1/health
 
+  - it: omits ROOT_URL env var when rootUrl is not set
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ROOT_URL
+          any: true
+
+  - it: sets ROOT_URL env var when rootUrl is set
+    set:
+      rootUrl: https://ghostfolio.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ROOT_URL
+            value: "https://ghostfolio.example.com"
+
+  - it: includes ROOT_URL alongside other env vars
+    set:
+      rootUrl: https://ghostfolio.example.com
+      env:
+        - name: DATABASE_URL
+          value: "postgresql://test@test:5432/db"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ROOT_URL
+            value: "https://ghostfolio.example.com"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            value: "postgresql://test@test:5432/db"
+
   - it: renders env vars when set
     set:
       env:
@@ -99,6 +135,57 @@ tests:
           content:
             name: DATABASE_URL
             value: "postgresql://ghostfolio:secret@localhost:5432/ghostfolio"
+
+  - it: renders envFrom when set
+    set:
+      envFrom:
+        - secretRef:
+            name: ghostfolio-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].envFrom
+          content:
+            secretRef:
+              name: ghostfolio-secrets
+
+  - it: renders OIDC env vars when set
+    set:
+      env:
+        - name: ENABLE_FEATURE_AUTH_OIDC
+          value: "true"
+        - name: OIDC_ISSUER
+          value: https://keycloak.example.com/realms/myrealm
+        - name: OIDC_CLIENT_ID
+          value: ghostfolio
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ghostfolio
+              key: OIDC_CLIENT_SECRET
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ENABLE_FEATURE_AUTH_OIDC
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_ISSUER
+            value: https://keycloak.example.com/realms/myrealm
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_ID
+            value: ghostfolio
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OIDC_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: ghostfolio
+                key: OIDC_CLIENT_SECRET
 
   - it: mounts /tmp by default for Prisma and Node.js temp files
     asserts:

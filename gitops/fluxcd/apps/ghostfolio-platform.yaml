@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ghostfolio-platform
+  namespace: flux-system
+spec:
+  interval: 30m
+  suspend: true
+  chart:
+    spec:
+      chart: ./helm/platform
+      sourceRef:
+        kind: GitRepository
+        name: ghostfolio
+        namespace: flux-system
+  targetNamespace: ghostfolio
+  install:
+    createNamespace: true
+  values:
+    global:
+      appName: ghostfolio
+    postgres:
+      enabled: true
+      provider: cnpg
+      instances: 1
+      storage:
+        size: 10Gi
+      database: ghostfolio
+      owner: ghostfolio
+      backup:
+        enabled: false
+    redis:
+      enabled: true
+      provider: dragonfly
+      replicas: 1
+      dragonfly:
+        authentication:
+          enabled: true
+          passwordSecretRef:
+            name: ghostfolio
+            key: REDIS_PASSWORD
+    externalSecrets:
+      enabled: true
+      refreshInterval: 1h
+      storeRef:
+        name: cluster-secret-store
+        kind: ClusterSecretStore
+      data:
+        - secretKey: REDIS_PASSWORD
+          remoteKey: ghostfolio/redis
+          property: password
+        - secretKey: ACCESS_TOKEN_SALT
+          remoteKey: ghostfolio/auth
+          property: access-token-salt
+        - secretKey: JWT_SECRET_KEY
+          remoteKey: ghostfolio/auth
+          property: jwt-secret-key
+        - secretKey: OIDC_CLIENT_SECRET
+          remoteKey: ghostfolio/auth
+          property: oidc-client-secret

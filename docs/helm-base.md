@@ -17,18 +17,105 @@ helm install ghostfolio ./helm/base \
 
 ## Configuration
 
-<!-- TODO: Document the environment variables your application consumes. -->
-
 ### Environment variables
 
 Set `env` to inject environment variables into the container:
 
 ```yaml
 env:
-  - name: LOG_LEVEL
-    value: "info"
-  # - name: DATABASE_URL      # usually injected via envFrom from a Secret
-  #   value: "..."
+  - name: ROOT_URL
+    value: https://ghostfolio.example.com
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: ghostfolio-pg-app
+        key: uri
+  - name: REDIS_HOST
+    value: ghostfolio-redis
+  - name: REDIS_PORT
+    value: "6379"
+```
+
+#### Required environment variables
+
+| Variable | Description |
+| -------- | ----------- |
+| `DATABASE_URL` | PostgreSQL connection string (from CNPG secret `uri` key) |
+| `REDIS_HOST` | Dragonfly/Redis service name |
+| `ACCESS_TOKEN_SALT` | Random salt for access tokens |
+| `JWT_SECRET_KEY` | Random key for JWT signing |
+
+#### General environment variables
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `ROOT_URL` | `http://0.0.0.0:3333` | Public URL of the Ghostfolio instance. **Must be set** when using OIDC — the callback URL defaults to `${ROOT_URL}/api/auth/oidc/callback`. Also required for passkey/biometric auth. |
+
+#### Authentication mode
+
+Ghostfolio supports two authentication methods that can be combined or used exclusively:
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `ENABLE_FEATURE_AUTH_TOKEN` | `true` | Show the security-token login form |
+| `ENABLE_FEATURE_AUTH_OIDC` | `false` | Enable OpenID Connect (OIDC) authentication |
+
+**OIDC-only mode** — to disable the basic token login and allow only SSO:
+
+1. Set `ENABLE_FEATURE_AUTH_TOKEN=false` to hide the token login form
+2. Set `ENABLE_FEATURE_AUTH_OIDC=true` and configure the OIDC variables below
+
+When OIDC-only mode is active, users authenticate exclusively through your IdP (Keycloak, Authentik, Authelia, etc.).
+
+#### OIDC variables (required when `ENABLE_FEATURE_AUTH_OIDC=true`)
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `OIDC_ISSUER` | yes | IdP issuer URL (e.g. `https://keycloak.example.com/realms/myrealm`) |
+| `OIDC_CLIENT_ID` | yes | Client ID registered with the IdP |
+| `OIDC_CLIENT_SECRET` | yes | Client secret — use `secretKeyRef`, never inline |
+| `OIDC_SCOPE` | no | JSON array of scopes (default: `["openid"]`) |
+| `OIDC_CALLBACK_URL` | no | Override the callback URL (default: `${ROOT_URL}/api/auth/oidc/callback`) |
+| `OIDC_AUTHORIZATION_URL` | no | Manual override for the authorization endpoint |
+| `OIDC_TOKEN_URL` | no | Manual override for the token endpoint |
+| `OIDC_USER_INFO_URL` | no | Manual override for the userinfo endpoint |
+
+#### Disabling registration
+
+Registration (sign-up) is **not** controlled by an environment variable. After creating the first admin user, go to **Admin Control** in the Ghostfolio UI and toggle off **Allow Sign-Up**. Once disabled, new accounts can only be created by an admin or provisioned through the IdP.
+
+OIDC-only mode without disabling sign-up has a [known UX issue](https://github.com/ghostfolio/ghostfolio/discussions/6190): the "Get Started" button still appears but leads to an empty page. Disabling sign-ups from the admin panel avoids this.
+
+#### OIDC-only mode example
+
+Disable the token login form and enforce SSO through your IdP:
+
+```yaml
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: ghostfolio-pg-app
+        key: uri
+  - name: REDIS_HOST
+    value: ghostfolio-redis
+  - name: ROOT_URL
+    value: https://ghostfolio.example.com
+  - name: ENABLE_FEATURE_AUTH_TOKEN
+    value: "false"
+  - name: ENABLE_FEATURE_AUTH_OIDC
+    value: "true"
+  - name: OIDC_ISSUER
+    value: https://keycloak.example.com/realms/myrealm
+  - name: OIDC_CLIENT_ID
+    value: ghostfolio
+  - name: OIDC_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: ghostfolio
+        key: OIDC_CLIENT_SECRET
+  - name: OIDC_SCOPE
+    value: '["openid","email","profile"]'
 ```
 
 ### Injecting secrets
@@ -111,7 +198,7 @@ The selector reuses `app.selectorLabels`, so it matches the Deployment's pods au
 
 ## Probes
 
-Liveness and readiness probes target `/healthz` and `/readyz` on the container port. Override the defaults in `livenessProbe` / `readinessProbe` if your application exposes different paths.
+Liveness and readiness probes target `/api/v1/health` on the container port. Override the defaults in `livenessProbe` / `readinessProbe` if your application exposes different paths.
 
 ## Security context
 

@@ -1,0 +1,53 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ghostfolio-base
+  namespace: flux-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: ./helm/base
+      sourceRef:
+        kind: GitRepository
+        name: ghostfolio
+        namespace: flux-system
+  targetNamespace: ghostfolio
+  install:
+    createNamespace: true
+  values:
+    replicaCount: 1
+    image:
+      repository: docker.io/ghostfolio/ghostfolio
+      pullPolicy: IfNotPresent
+    gateway:
+      enabled: true
+      parentRefs:
+        - name: default-gateway
+      hostnames:
+        - ghostfolio.example.com
+    rootUrl: https://ghostfolio.example.com
+    env:
+      - name: DATABASE_URL
+        valueFrom:
+          secretKeyRef:
+            name: ghostfolio-pg-app
+            key: uri
+      - name: REDIS_HOST
+        value: ghostfolio-redis
+      - name: REDIS_PORT
+        value: "6379"
+      - name: ENABLE_FEATURE_AUTH_OIDC
+        value: "true"
+      - name: OIDC_ISSUER
+        value: https://keycloak.example.com/realms/myrealm
+      - name: OIDC_CLIENT_ID
+        value: ghostfolio
+      - name: OIDC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: ghostfolio
+            key: OIDC_CLIENT_SECRET
+    envFrom:
+      - secretRef:
+          name: ghostfolio
