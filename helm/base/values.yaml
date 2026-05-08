@@ -39,6 +39,11 @@ service:
   # -- Ghostfolio listens on port 3333 by default (configurable via PORT env var)
   targetPort: 3333
 
+# -- Public URL of the Ghostfolio instance (ROOT_URL).
+# Must be set when using OIDC — the callback URL defaults to
+# ${ROOT_URL}/api/auth/oidc/callback. Also required for passkey/biometric auth.
+rootUrl  : ""
+
 gateway:
   enabled: true
   annotations: {}

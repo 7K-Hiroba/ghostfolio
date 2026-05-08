@@ -48,9 +48,15 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.env }}
+          {{- if or .Values.rootUrl .Values.env }}
           env:
+            {{- if .Values.rootUrl }}
+            - name: ROOT_URL
+              value: {{ .Values.rootUrl | quote }}
+            {{- end }}
+            {{- with .Values.env }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
           {{- with .Values.envFrom }}
           envFrom:

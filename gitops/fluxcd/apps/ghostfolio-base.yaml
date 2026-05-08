@@ -26,6 +26,7 @@ spec:
         - name: default-gateway
       hostnames:
         - ghostfolio.example.com
+    rootUrl: https://ghostfolio.example.com
     env:
       - name: DATABASE_URL
         valueFrom:

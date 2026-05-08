@@ -23,6 +23,8 @@ Set `env` to inject environment variables into the container:
 
 ```yaml
 env:
+  - name: ROOT_URL
+    value: https://ghostfolio.example.com
   - name: DATABASE_URL
     valueFrom:
       secretKeyRef:
@@ -42,6 +44,12 @@ env:
 | `REDIS_HOST` | Dragonfly/Redis service name |
 | `ACCESS_TOKEN_SALT` | Random salt for access tokens |
 | `JWT_SECRET_KEY` | Random key for JWT signing |
+
+#### General environment variables
+
+| Variable | Default | Description |
+| -------- | ------- | ----------- |
+| `ROOT_URL` | `http://0.0.0.0:3333` | Public URL of the Ghostfolio instance. **Must be set** when using OIDC — the callback URL defaults to `${ROOT_URL}/api/auth/oidc/callback`. Also required for passkey/biometric auth. |
 
 #### Authentication mode
 
@@ -91,6 +99,8 @@ env:
         key: uri
   - name: REDIS_HOST
     value: ghostfolio-redis
+  - name: ROOT_URL
+    value: https://ghostfolio.example.com
   - name: ENABLE_FEATURE_AUTH_TOKEN
     value: "false"
   - name: ENABLE_FEATURE_AUTH_OIDC
