@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 (2026-05-08)
+
+## What's Changed
+* fix: icon in ghostfolio platform by @joaodss2 in https://github.com/7K-Hiroba/ghostfolio/pull/18
+
+
+**Full Changelog**: https://github.com/7K-Hiroba/ghostfolio/compare/helm-platform-v1.0.1...helm-platform-v1.0.2
+
 ## 1.0.1 (2026-05-08)
 
 ## What's Changed
